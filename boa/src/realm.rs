@@ -16,11 +16,12 @@ use crate::{
 };
 use gc::{Gc, GcCell};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::clone::Clone;
 
 /// Representation of a Realm.
 ///
 /// In the specification these are called Realm Records.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Realm {
     pub global_object: GcObject,
     pub global_env: Gc<GcCell<GlobalEnvironmentRecord>>,

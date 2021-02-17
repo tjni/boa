@@ -10,7 +10,7 @@ pub trait Executable {
     fn run(&self, context: &mut Context) -> Result<Value>;
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum InterpreterState {
     Executing,
     Return,
@@ -19,7 +19,7 @@ pub(crate) enum InterpreterState {
 }
 
 /// A Javascript intepreter
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Interpreter {
     /// the current state of the interpreter.
     state: InterpreterState,

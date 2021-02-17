@@ -55,6 +55,49 @@ impl StatementList {
         }
         Ok(())
     }
+
+    pub fn run_and_track_state(&self, context: &mut Context) -> Result<(Value, Vec<Context>)> {
+        let _timer = BoaProfiler::global().start_event("StatementList", "exec");
+
+        let mut states = vec![context.clone()];
+
+        // https://tc39.es/ecma262/#sec-block-runtime-semantics-evaluation
+        // The return value is uninitialized, which means it defaults to Value::Undefined
+        let mut obj = Value::default();
+        context
+            .executor()
+            .set_current_state(InterpreterState::Executing);
+        
+        for (i, item) in self.items().iter().enumerate() {
+            states.push(context.clone());
+
+            let val = item.run(context)?;
+            match context.executor().get_current_state() {
+                InterpreterState::Return => {
+                    // Early return.
+                    obj = val;
+                    break;
+                }
+                InterpreterState::Break(_label) => {
+                    // Early break.
+                    break;
+                }
+                InterpreterState::Continue(_label) => {
+                    break;
+                }
+                InterpreterState::Executing => {
+                    // Continue execution
+                }
+            }
+            if i + 1 == self.items().len() {
+                obj = val;
+            }
+        }
+
+        states.push(context.clone());
+
+        Ok((obj, states))
+    }
 }
 
 impl Executable for StatementList {

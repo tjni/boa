@@ -25,6 +25,7 @@ use crate::{
     value::{RcString, RcSymbol, Value},
     BoaProfiler, Executable, Result,
 };
+use std::clone::Clone;
 use std::result::Result as StdResult;
 
 #[cfg(feature = "console")]
@@ -208,7 +209,7 @@ impl StandardObjects {
 /// `Context`s constructed in a thread share the same runtime, therefore it
 /// is possible to share objects from one context to another context, but they
 /// have to be in the same thread.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Context {
     /// realm holds both the global object and the environment
     realm: Realm,
@@ -709,7 +710,7 @@ impl Context {
     #[cfg(not(feature = "vm"))]
     #[allow(clippy::unit_arg, clippy::drop_copy)]
     #[inline]
-    pub fn eval<T: AsRef<[u8]>>(&mut self, src: T) -> Result<Value> {
+    pub fn eval<T: AsRef<[u8]>>(&mut self, src: T) -> Result<(Value, Vec<Context>)> {
         let main_timer = BoaProfiler::global().start_event("Main", "Main");
         let src_bytes: &[u8] = src.as_ref();
 
@@ -718,8 +719,8 @@ impl Context {
             .map_err(|e| e.to_string());
 
         let execution_result = match parsing_result {
-            Ok(statement_list) => statement_list.run(self),
-            Err(e) => self.throw_syntax_error(e),
+            Ok(statement_list) => statement_list.run_and_track_state(self),
+            Err(e) => self.throw_syntax_error(e).map(|v| (v, vec![])),
         };
 
         // The main_timer needs to be dropped before the BoaProfiler is.

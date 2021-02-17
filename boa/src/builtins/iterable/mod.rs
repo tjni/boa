@@ -8,7 +8,7 @@ use crate::{
     BoaProfiler, Context, Result, Value,
 };
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct IteratorPrototypes {
     iterator_prototype: GcObject,
     array_iterator: GcObject,
